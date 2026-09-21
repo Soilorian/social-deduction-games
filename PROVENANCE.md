@@ -1,0 +1,1 @@
+Prepared from the owner-selected Ubuntu project files on 21 September 2026. Application source is preserved, except that embedded manager credentials in the social-deduction collection are read from the environment. Dependencies, archives, logs and saved runtime state are excluded. Existing third-party notices remain applicable; no new blanket license is assigned.

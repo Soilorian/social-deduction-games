@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Avalon</title>
+  <!-- Use system fonts. For a more thematic look, download Cinzel and Crimson Text and add a local @font-face. -->
+  <style>
+    :root {
+      --bg: #0f0e14;
+      --surface: #1a1824;
+      --surface2: #252230;
+      --gold: #c9a227;
+      --gold-dim: #8b7312;
+      --town: #2d5a3d;
+      --mafia: #6b2d3d;
+      --text: #e8e4e0;
+      --muted: #8a8580;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 18px;
+    }
+    h1, h2, h3 { font-family: Georgia, serif; color: var(--gold); margin: 0 0 0.5rem 0; }
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    input, button, select {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--surface2);
+      background: var(--surface2);
+      color: var(--text);
+    }
+    button {
+      cursor: pointer;
+      background: var(--gold-dim);
+      color: var(--bg);
+      border-color: var(--gold);
+      font-weight: 600;
+    }
+    button:hover { background: var(--gold); color: var(--bg); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input::placeholder { color: var(--muted); }
+    .hidden { display: none !important; }
+    #login .panel { text-align: center; }
+    #login input { width: 220px; margin-right: 0.5rem; }
+    .chat-box {
+      height: 200px;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+    .chat-box div { margin-bottom: 0.25rem; word-break: break-word; }
+    .chat-input { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .chat-input input { flex: 1; }
+    .role-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .role-row label { flex: 1; }
+    .role-row input[type="number"] { width: 70px; }
+    .mission-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; }
+    .mission-row input { width: 60px; }
+    .player-list { list-style: none; padding: 0; margin: 0; }
+    .player-list li { padding: 0.35rem 0; border-bottom: 1px solid var(--surface2); }
+    .player-list li:last-child { border-bottom: none; }
+    .badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; }
+    .badge.manager { background: var(--gold-dim); color: var(--bg); }
+    .my-role { font-size: 1.1rem; color: var(--gold); margin: 0.5rem 0; }
+    .sees-list { margin: 0.5rem 0; padding-left: 1rem; color: var(--muted); }
+    .team-select li { cursor: pointer; }
+    #teamSelectList li.selected { background: var(--gold-dim); color: var(--bg); border-radius: 4px; padding-left: 0.5rem; font-weight: 600; }
+    .vote-btns { display: flex; gap: 1rem; margin: 1rem 0; }
+    .vote-btns button { flex: 1; padding: 0.75rem; }
+    .mission-cards button { margin: 0.5rem; padding: 0.75rem 1.5rem; }
+    .mission-cards .succeed { background: var(--town); border-color: #3d7a52; }
+    .mission-cards .fail { background: var(--mafia); border-color: #8b3d52; }
+    .timer { color: var(--gold); font-weight: 600; }
+    .game-over h2 { font-size: 1.5rem; }
+    .game-over .winner { color: var(--gold); font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <div id="login" class="container">
+    <div class="panel">
+      <h1>Avalon</h1>
+      <p>Enter your username to join the game.</p>
+      <input id="name" placeholder="Username" maxlength="32" autocomplete="off">
+      <button type="button" id="btnJoin">Join</button>
+    </div>
+  </div>
+
+  <div id="game" class="container hidden">
+    <div class="panel">
+      <p id="myNameBar" class="muted"></p>
+      <h2>Players</h2>
+      <ul id="players" class="player-list"></ul>
+      <p id="managerLoginRow">
+        <input type="password" id="managerPass" placeholder="Manager password">
+        <button type="button" id="btnManagerLogin">Become manager</button>
+      </p>
+      <div id="managerArea" class="hidden">
+        <p><button type="button" id="btnSetup">Setup (roles & missions)</button> <button type="button" id="btnLobby">Lobby</button> <button type="button" id="btnStartGame">Start game</button> <button type="button" id="btnReset">Reset game</button></p>
+      </div>
+    </div>
+
+    <div id="setupPanel" class="panel hidden">
+      <h2>Setup</h2>
+      <p>Set number of each role. Total must equal number of players when you start.</p>
+      <div id="roleCounts"></div>
+      <p><label>Vote time (seconds): <input type="number" id="voteTime" min="10" max="300" value="60"></label> <button type="button" id="btnVoteTime">Set</button></p>
+      <h3>Missions</h3>
+      <p>Participants = team size. Fails required = mission fails if at least this many fail cards (e.g. 1 = fails with 1 or more fails).</p>
+      <div id="missionsConfig"></div>
+      <button type="button" id="btnAddMission">Add mission</button>
+    </div>
+
+    <div id="phasePanel" class="panel">
+      <div id="phaseRoles" class="hidden">
+        <h3>Your role</h3>
+        <p id="myRole" class="my-role"></p>
+        <div id="merlinSees" class="sees-list hidden" dir="rtl" style="font-family: 'Tahoma', 'Vazirmatn', sans-serif;"></div>
+        <div id="percivalSees" class="sees-list hidden"></div>
+        <div id="mafiaSees" class="sees-list hidden" dir="rtl" style="font-family: 'Tahoma', 'Vazirmatn', sans-serif;"></div>
+        <!-- <div id="mafiaSees" class="sees-list hidden"></div> -->
+      </div>
+      <div id="phaseTeamSelection" class="hidden">
+        <h3>Select mission team</h3>
+        <p id="leaderName"></p>
+        <p>Mission <span id="missionNum"></span>: need <span id="missionSize"></span> participants. Select players:</p>
+        <ul id="teamSelectList" class="player-list team-select"></ul>
+        <button type="button" id="confirmTeamBtn" disabled>Confirm team</button>
+      </div>
+      <div id="phaseTeamVote" class="hidden">
+        <h3>Vote on the team</h3>
+        <p id="teamVoteList"></p>
+        <p class="timer" id="teamVoteTimer"></p>
+        <div id="teamVoteBtns" class="vote-btns">
+          <button type="button" id="btnTeamApprove">Approve</button>
+          <button type="button" id="btnTeamReject">Reject</button>
+        </div>
+        <p id="teamVoteDone" class="hidden muted"></p>
+      </div>
+      <div id="phaseMissionVote" class="hidden">
+        <h3>Mission</h3>
+        <p>You are on this mission. Choose your card:</p>
+        <p class="timer" id="missionVoteTimer"></p>
+        <div class="mission-cards">
+          <button type="button" class="succeed" id="btnMissionSucceed">Succeed</button>
+          <button type="button" class="fail" id="btnMissionFail">Fail</button>
+        </div>
+        <p id="missionVoteWaiting" class="muted hidden">Waiting for other mission members...</p>
+      </div>
+      <div id="phaseMissionResult" class="hidden">
+        <h3>Mission result</h3>
+        <p id="missionResultText"></p>
+        <p>Town wins: <span id="townWins">0</span> | Mafia wins: <span id="mafiaWins">0</span></p>
+      </div>
+      <div id="phaseAssassin" class="hidden">
+        <h3>Assassin</h3>
+        <p id="assassinPrompt">Town won 3 missions. If you are the Assassin, guess Merlin:</p>
+        <ul id="assassinGuessList" class="player-list team-select"></ul>
+      </div>
+      <div id="phaseGameOver" class="hidden game-over">
+        <h2>Game over</h2>
+        <p class="winner" id="winnerText"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Chat / log</h3>
+      <div id="chat" class="chat-box"></div>
+      <div class="chat-input">
+        <input id="chatText" placeholder="Message..." maxlength="200">
+        <button type="button" id="btnSendChat">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
