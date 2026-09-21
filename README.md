@@ -4,7 +4,8 @@ Related browser party-game prototypes built with Node.js, Express and Socket.IO.
 
 ## Applications
 
-- `apps/word-role`: the Ubuntu Avalon/word-role variant.
+- `apps/avalon`: the explicitly requested local Ubuntu Avalon game, with hidden roles, team votes and missions.
+- `apps/word-role`: the earlier copy of this Ubuntu game, retained for existing links.
 - `apps/spy-two-word`: the separate Ubuntu spy variant.
 - `tools`: the supplied role-generation utilities.
 
